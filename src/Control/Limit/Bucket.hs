@@ -12,7 +12,7 @@
 -- A simple in-memory rate limiter based on the bucket model. You can
 -- spend any capacity available in your bucket of water. When it's
 -- full, you can burst it down. When it's empty, you need to wait for
--- it to fill up enough to continue.
+-- it to sufficiently fill up to continue.
 ----------------------------------------------------------------------------
 
 module Control.Limit.Bucket
@@ -44,13 +44,13 @@ data Throttle = Throttle {
 --
 -- How it works:
 --
--- >>> new reserve tick regen
+-- >>> new initial reserve tick regen
 --
--- Throttle will start with the reserve and burst it down to zero
--- without any limiting.
+-- Throttle will start with @initial@ capacity units and burst it down
+-- to zero without any limiting.
 --
--- Right from the start, it will regenerate by regen every tick
--- microseconds, up to a maximum of reserve.
+-- Right from the start, it will regenerate by @regen@ every @tick@
+-- microseconds, up to a maximum of @reserve@.
 --
 -- Minimum tick size of 1000 is recommended, as underlying MVar delays
 -- disrupt expected results in lower settings.
