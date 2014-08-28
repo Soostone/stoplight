@@ -1,0 +1,91 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Control.Limit.Bucket
+-- Copyright   :  Soostone Inc, 2014
+-- License     :  All Rights Reserved
+--
+-- Maintainer  :  Ozgun Ataman
+-- Stability   :  experimental
+--
+-- A simple in-memory rate limiter based on the bucket model. You can
+-- spend any capacity available in your bucket of water. When it's
+-- full, you can burst it down. When it's empty, you need to wait for
+-- it to fill up enough to continue.
+----------------------------------------------------------------------------
+
+module Control.Limit.Bucket
+    ( Throttle
+    , new
+    , wait
+    ) where
+
+-------------------------------------------------------------------------------
+import           Control.Concurrent
+import qualified Control.Concurrent.MSemN as Sem
+import qualified Control.Immortal         as Im
+import           Control.Monad
+import           Control.Monad.Fix
+import           Data.Typeable
+import           System.Mem.Weak
+-------------------------------------------------------------------------------
+
+
+data Throttle = Throttle {
+      sem    :: Sem.MSemN Int
+    , feeder :: Im.Thread
+    } deriving (Typeable)
+
+
+-------------------------------------------------------------------------------
+-- | New rate limiter with a surplus buffer and capacity recovery with
+-- custom ticks.
+--
+-- How it works:
+--
+-- >>> new reserve tick regen
+--
+-- Throttle will start with the reserve and burst it down to zero
+-- without any limiting.
+--
+-- Right from the start, it will regenerate by regen every tick
+-- microseconds, up to a maximum of reserve.
+--
+-- Minimum tick size of 1000 is recommended, as underlying MVar delays
+-- disrupt expected results in lower settings.
+new :: Int
+    -- ^ Initial reserve
+    -> Int
+    -- ^ Maximum capacity reserve
+    -> Int
+    -- ^ Regeneration tick length.
+    -> Int
+    -- ^ Regeneration amount
+    -> IO Throttle
+new start buffer tick recovery = do
+    s <- Sem.new start
+    t <- mfix (\ t -> do
+      s' <- mkWeakPtr s (Just (Im.stop t))
+      Im.create $ const $ forever $ do
+        threadDelay tick
+        s'' <- deRefWeak s'
+        case s'' of
+          Nothing -> return ()
+          Just s''' -> void $
+            Sem.signalF s $ \ i -> (min buffer (i+recovery), ()))
+
+    return $ Throttle s t
+
+
+-------------------------------------------------------------------------------
+-- | Acquire n capacity units from throttle or block until it's
+-- available. Smaller waiters may block in FIFO fashion due to larger
+-- waiters earlier in the queue.
+wait :: Throttle -> Int -> IO ()
+wait (Throttle s _) = Sem.wait s
+
+
+
+
+

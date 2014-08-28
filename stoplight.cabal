@@ -1,0 +1,42 @@
+name:                stoplight
+version:             0.1.0.0
+-- synopsis:            
+-- description:         
+license:             BSD3
+license-file:        LICENSE
+author:              Ozgun Ataman
+maintainer:          ozgun.ataman@soostone.com
+copyright:           Soostone Inc, 2014
+category:            Control
+build-type:          Simple
+-- extra-source-files:  
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     
+    Control.Limit.Bucket
+  other-extensions:    
+    DeriveDataTypeable
+  build-depends:       
+      base >=4.6 && <4.7
+    , SafeSemaphore                >= 0.10 && < 0.11
+    , immortal                     >= 0.2 && < 0.3
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+
+test-suite test
+    type:           exitcode-stdio-1.0
+    main-is:        main.hs
+    hs-source-dirs: test, src
+    ghc-options:    -threaded -rtsopts
+    build-depends:       
+        base              ==4.*  
+      , SafeSemaphore
+      , immortal
+      , QuickCheck         >= 2.7 && < 2.8
+      , HUnit              >= 1.2.5.2 && < 1.3
+      , hspec              >= 1.9 && < 1.10
+      , hspec-expectations >= 0.5 && < 0.7
+    default-language: Haskell2010
+
