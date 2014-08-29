@@ -15,8 +15,8 @@ import qualified Control.Limit.Bucket as T
 spec :: Spec
 spec = parallel $ describe "throttle" $ do
 
-  forM_ [1000, 10000, 100000] $ \ tick ->
-    forM_ [1, 5, 20, 40] $ \ regen ->
+  forM_ [1000, 10000, 100000, 250000] $ \ tick ->
+    forM_ [1, 5, 20, 40, 50] $ \ regen ->
       it ("should work at " ++ show (tick,regen)) $ do
         testThrottle tick regen
 

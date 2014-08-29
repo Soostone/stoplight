@@ -57,9 +57,9 @@ data Throttle = Throttle {
 new :: Int
     -- ^ Initial reserve
     -> Int
-    -- ^ Maximum capacity reserve
+    -- ^ Maximum reserve
     -> Int
-    -- ^ Regeneration tick length.
+    -- ^ Regeneration tick length in microseconds
     -> Int
     -- ^ Regeneration amount
     -> IO Throttle
