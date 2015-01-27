@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Control.Limit.Bucket
+-- Module      :  Stoplight.Bucket
 -- Copyright   :  Soostone Inc, 2014
 -- License     :  All Rights Reserved
 --
@@ -15,7 +15,7 @@
 -- it to sufficiently fill up to continue.
 ----------------------------------------------------------------------------
 
-module Control.Limit.Bucket
+module Stoplight.Bucket
     ( Throttle
     , new
     , wait

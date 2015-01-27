@@ -9,7 +9,7 @@ import           Data.IORef
 import           Test.Hspec
 import           Test.HUnit
 -------------------------------------------------------------------------------
-import qualified Control.Limit.Bucket as T
+import qualified Stoplight.Bucket   as T
 -------------------------------------------------------------------------------
 
 spec :: Spec
