@@ -1,4 +1,4 @@
-# stoplight
+# stoplight [![Build Status](https://travis-ci.org/Soostone/stoplight.svg?branch=master)](https://travis-ci.org/Soostone/stoplight)
 
 This package provides a simple in-memory rate limiter based on the
 leaking bucket model. It currently has a single module
