@@ -19,6 +19,7 @@ module Stoplight.Bucket
     ( Throttle
     , new
     , wait
+    , peekAvail
     ) where
 
 -------------------------------------------------------------------------------
@@ -86,6 +87,7 @@ wait :: Throttle -> Int -> IO ()
 wait (Throttle s _) = Sem.wait s
 
 
-
-
-
+-------------------------------------------------------------------------------
+-- | Peek currently available slot count
+peekAvail :: Throttle -> IO Int
+peekAvail (Throttle s _) = Sem.peekAvail s
