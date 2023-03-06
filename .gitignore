@@ -1,1 +1,3 @@
 dist
+dist-newstyle
+.pre-commit-config.yaml
