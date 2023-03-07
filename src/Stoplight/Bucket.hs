@@ -19,6 +19,7 @@ module Stoplight.Bucket
     ( Throttle
     , new
     , wait
+    , peekAvail
     ) where
 
 -------------------------------------------------------------------------------
@@ -72,10 +73,10 @@ new start buffer tick recovery = do
         s'' <- deRefWeak s'
         case s'' of
           Nothing -> return ()
-          Just s''' -> void $
-            Sem.signalF s $ \ i -> (min buffer (i+recovery), ()))
+          Just _ -> void $
+            Sem.signalF s $ \ i -> (min (buffer - i) recovery, ()))
 
-    return $ Throttle s t
+    return $ Throttle {sem = s, feeder = t}
 
 
 -------------------------------------------------------------------------------
@@ -86,6 +87,7 @@ wait :: Throttle -> Int -> IO ()
 wait (Throttle s _) = Sem.wait s
 
 
-
-
-
+-------------------------------------------------------------------------------
+-- | Peek currently available slot count
+peekAvail :: Throttle -> IO Int
+peekAvail = Sem.peekAvail . sem
