@@ -40,3 +40,15 @@ spec_throttle = parallel $ describe "throttle" $ do
         assertBool ("meets lowerbound: " ++ show cnt') $ cnt' >= maxLim * 0.8
 
 
+spec_overflow :: Spec
+spec_overflow = parallel $ describe "overflow" $ do
+  forM_ [1000, 10000, 100000, 250000] $ \ tick ->
+    forM_ [1, 5, 20] $ \ regen ->
+      it ("should not overflow at " ++ show (tick,regen)) $ do
+        testOverflow tick regen
+  where
+    testOverflow tick regen = do
+      t <- T.new 0 5 tick regen
+      threadDelay (tick * 10)
+      availableSlots <- T.peekAvail t
+      assertBool "has the maximum reserve after two ticks" $ availableSlots == 5
