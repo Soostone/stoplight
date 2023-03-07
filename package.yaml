@@ -1,0 +1,61 @@
+---
+name: stoplight
+version: 0.1.0.0
+synopsis: Rate-limiting constructs for monadic actions
+description: Rate-limiting constructs for monadic actions
+license: BSD3
+license-file: LICENSE
+author: Ozgun Ataman
+maintainer: ozgun.ataman@soostone.com
+copyright: Soostone Inc, 2014
+category: Control
+build-type: Simple
+
+when:
+  - condition: flag(development)
+    then:
+      cpp-options: -DDEVELOPMENT
+    else:
+      cpp-options: -DNODEVELOPMENT
+  - condition: flag(lib-Werror)
+    then:
+      ghc-options:
+        - -Wall -Werror -fwarn-redundant-constraints -Wincomplete-record-updates
+    else:
+      ghc-options:
+        - -Wall -fwarn-redundant-constraints -Wincomplete-record-updates
+
+flags:
+  lib-Werror:
+    manual: true
+    default: false
+    description: "Turn on -Wall and -Werror. Should always be enabled"
+  development:
+    manual: true
+    default: false
+    description: >-
+      Compile with -O0 for faster compile times.
+      Disable for production builds.
+
+default-extensions:
+  - DeriveDataTypeable
+
+dependencies:
+  - base
+  - SafeSemaphore
+  - immortal
+
+library:
+  source-dirs: src
+
+tests:
+  test:
+    main: Main.hs
+    source-dirs:
+      - src
+      - test
+    dependencies:
+      - tasty
+      - tasty-hspec
+      - tasty-hunit
+      - tasty-discover

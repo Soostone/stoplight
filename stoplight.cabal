@@ -1,40 +1,80 @@
-name:                stoplight
-version:             0.1.0.0
-synopsis:            Rate-limiting constructs for monadic actions
-description:         Rate-limiting constructs for monadic actions
-license:             BSD3
-license-file:        LICENSE
-author:              Ozgun Ataman
-maintainer:          ozgun.ataman@soostone.com
-copyright:           Soostone Inc, 2014
-category:            Control
-build-type:          Simple
-cabal-version:       >=1.10
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           stoplight
+version:        0.1.0.0
+synopsis:       Rate-limiting constructs for monadic actions
+description:    Rate-limiting constructs for monadic actions
+category:       Control
+author:         Ozgun Ataman
+maintainer:     ozgun.ataman@soostone.com
+copyright:      Soostone Inc, 2014
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+
+flag development
+  description: Compile with -O0 for faster compile times. Disable for production builds.
+  manual: True
+  default: False
+
+flag lib-Werror
+  description: Turn on -Wall and -Werror. Should always be enabled
+  manual: True
+  default: False
 
 library
   exposed-modules:
-    Stoplight.Bucket
-  other-extensions:
-    DeriveDataTypeable
+      Stoplight.Bucket
+  other-modules:
+      Paths_stoplight
+  hs-source-dirs:
+      src
+  default-extensions:
+      DeriveDataTypeable
   build-depends:
-      base                         >= 4.6 && <5
-    , SafeSemaphore                >= 0.10 && < 0.11
-    , immortal                     >= 0.2
-  hs-source-dirs:      src
-  default-language:    Haskell2010
-
+      SafeSemaphore
+    , base
+    , immortal
+  if flag(development)
+    cpp-options: -DDEVELOPMENT
+  else
+    cpp-options: -DNODEVELOPMENT
+  if flag(lib-Werror)
+    ghc-options: -Wall -Werror -fwarn-redundant-constraints -Wincomplete-record-updates
+  else
+    ghc-options: -Wall -fwarn-redundant-constraints -Wincomplete-record-updates
+  default-language: Haskell2010
 
 test-suite test
-    type:           exitcode-stdio-1.0
-    main-is:        main.hs
-    hs-source-dirs: test, src
-    ghc-options:    -threaded -rtsopts
-    build-depends:
-        base              ==4.*
-      , SafeSemaphore
-      , immortal
-      , QuickCheck         >= 2.7 && < 2.8
-      , HUnit              >= 1.2.5.2 && < 1.3
-      , hspec              >= 1.9 && < 2.2
-      , hspec-expectations >= 0.5 && < 0.7
-    default-language: Haskell2010
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Stoplight.Bucket
+      BucketSpec
+      Paths_stoplight
+  hs-source-dirs:
+      src
+      test
+  default-extensions:
+      DeriveDataTypeable
+  build-depends:
+      SafeSemaphore
+    , base
+    , immortal
+    , tasty
+    , tasty-discover
+    , tasty-hspec
+    , tasty-hunit
+  if flag(development)
+    cpp-options: -DDEVELOPMENT
+  else
+    cpp-options: -DNODEVELOPMENT
+  if flag(lib-Werror)
+    ghc-options: -Wall -Werror -fwarn-redundant-constraints -Wincomplete-record-updates
+  else
+    ghc-options: -Wall -fwarn-redundant-constraints -Wincomplete-record-updates
+  default-language: Haskell2010
