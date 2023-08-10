@@ -28,13 +28,14 @@ import qualified Control.Concurrent.MSemN as Sem
 import qualified Control.Immortal         as Im
 import           Control.Monad
 import           Control.Monad.Fix
+import           Data.IORef
 import           Data.Typeable
 import           System.Mem.Weak
 -------------------------------------------------------------------------------
 
 
 data Throttle = Throttle {
-      sem    :: Sem.MSemN Int
+      semRef :: IORef (Sem.MSemN Int)
     , feeder :: Im.Thread
     } deriving (Typeable)
 
@@ -65,18 +66,19 @@ new :: Int
     -- ^ Regeneration amount
     -> IO Throttle
 new start buffer tick recovery = do
-    s <- Sem.new start
+    sref <- newIORef =<< Sem.new start
     t <- mfix (\ t -> do
-      s' <- mkWeakPtr s (Just (Im.stop t))
+      s <- mkWeakIORef sref (Im.stop t)
       Im.create $ const $ forever $ do
         threadDelay tick
-        s'' <- deRefWeak s'
-        case s'' of
+        s' <- deRefWeak s
+        case s' of
           Nothing -> return ()
-          Just _ -> void $
-            Sem.signalF s $ \ i -> (min (buffer - i) recovery, ()))
+          Just s'' -> do
+            sref' <- readIORef s''
+            void $ Sem.signalF sref' $ \ i -> (min (buffer - i) recovery, ()))
 
-    return $ Throttle {sem = s, feeder = t}
+    return $ Throttle {semRef = sref, feeder = t}
 
 
 -------------------------------------------------------------------------------
@@ -84,10 +86,13 @@ new start buffer tick recovery = do
 -- available. Smaller waiters may block in FIFO fashion due to larger
 -- waiters earlier in the queue.
 wait :: Throttle -> Int -> IO ()
-wait (Throttle s _) = Sem.wait s
-
+wait (Throttle sem _) w = do
+  s <- readIORef sem
+  Sem.wait s w
 
 -------------------------------------------------------------------------------
 -- | Peek currently available slot count
 peekAvail :: Throttle -> IO Int
-peekAvail = Sem.peekAvail . sem
+peekAvail (Throttle sem _) = do
+  s <- readIORef sem
+  Sem.peekAvail s
