@@ -43,6 +43,7 @@ default-extensions:
 dependencies:
   - base
   - SafeSemaphore
+  - exceptions
   - immortal
 
 library:

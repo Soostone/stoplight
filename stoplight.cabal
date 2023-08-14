@@ -38,6 +38,7 @@ library
   build-depends:
       SafeSemaphore
     , base
+    , exceptions
     , immortal
   if flag(development)
     cpp-options: -DDEVELOPMENT
@@ -64,6 +65,7 @@ test-suite test
   build-depends:
       SafeSemaphore
     , base
+    , exceptions
     , immortal
     , tasty
     , tasty-discover

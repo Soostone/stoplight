@@ -19,6 +19,7 @@ module Stoplight.Bucket
     ( Throttle
     , new
     , close
+    , withThrottle
     , wait
     , peekAvail
     ) where
@@ -28,6 +29,8 @@ import           Control.Concurrent
 import qualified Control.Concurrent.MSemN as Sem
 import qualified Control.Immortal         as Im
 import           Control.Monad
+import           Control.Monad.Catch
+import           Control.Monad.IO.Class
 import           Data.Typeable
 -------------------------------------------------------------------------------
 
@@ -76,9 +79,29 @@ new start buffer tick recovery = do
 
 
 -------------------------------------------------------------------------------
--- | Clean up resources associated with a throttle.
+-- | Clean up resources associated with a throttle. Use with 'bracket' or with
+-- 'allocate' from the resourcet package.
 close :: Throttle -> IO ()
 close (Throttle _ t) = Im.stop t
+
+
+-------------------------------------------------------------------------------
+-- | Create a throttle and run an action with it, automatically closing
+-- the throttle on completion.
+withThrottle :: (MonadIO m, MonadMask m)
+             => Int
+             -- ^ Initial reserve
+             -> Int
+             -- ^ Maximum reserve
+             -> Int
+             -- ^ Regeneration tick length in microseconds
+             -> Int
+             -- ^ Regeneration amount
+             -> (Throttle -> m b)
+             -- ^ Action to perform with the throttle
+             -> m b
+withThrottle start buffer tick recovery m =
+    bracket (liftIO $ new start buffer tick recovery) (liftIO . close) m
 
 
 -------------------------------------------------------------------------------
