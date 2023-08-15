@@ -18,6 +18,8 @@
 module Stoplight.Bucket
     ( Throttle
     , new
+    , close
+    , withThrottle
     , wait
     , peekAvail
     ) where
@@ -27,9 +29,9 @@ import           Control.Concurrent
 import qualified Control.Concurrent.MSemN as Sem
 import qualified Control.Immortal         as Im
 import           Control.Monad
-import           Control.Monad.Fix
+import           Control.Monad.Catch
+import           Control.Monad.IO.Class
 import           Data.Typeable
-import           System.Mem.Weak
 -------------------------------------------------------------------------------
 
 
@@ -55,6 +57,9 @@ data Throttle = Throttle {
 --
 -- Minimum tick size of 1000 is recommended, as underlying MVar delays
 -- disrupt expected results in lower settings.
+--
+-- Every 'new' call must be paired with a call to 'close' in order to
+-- stop the regenerating thread.
 new :: Int
     -- ^ Initial reserve
     -> Int
@@ -66,17 +71,37 @@ new :: Int
     -> IO Throttle
 new start buffer tick recovery = do
     s <- Sem.new start
-    t <- mfix (\ t -> do
-      s' <- mkWeakPtr s (Just (Im.stop t))
-      Im.create $ const $ forever $ do
-        threadDelay tick
-        s'' <- deRefWeak s'
-        case s'' of
-          Nothing -> return ()
-          Just _ -> void $
-            Sem.signalF s $ \ i -> (min (buffer - i) recovery, ()))
+    t <- Im.create $ const $ forever $ do
+      threadDelay tick
+      void $ Sem.signalF s $ \ i -> (min (buffer - i) recovery, ())
 
     return $ Throttle {sem = s, feeder = t}
+
+
+-------------------------------------------------------------------------------
+-- | Clean up resources associated with a throttle. Use with 'bracket' or with
+-- 'allocate' from the resourcet package.
+close :: Throttle -> IO ()
+close (Throttle _ t) = Im.stop t
+
+
+-------------------------------------------------------------------------------
+-- | Create a throttle and run an action with it, automatically closing
+-- the throttle on completion.
+withThrottle :: (MonadIO m, MonadMask m)
+             => Int
+             -- ^ Initial reserve
+             -> Int
+             -- ^ Maximum reserve
+             -> Int
+             -- ^ Regeneration tick length in microseconds
+             -> Int
+             -- ^ Regeneration amount
+             -> (Throttle -> m b)
+             -- ^ Action to perform with the throttle
+             -> m b
+withThrottle start buffer tick recovery m =
+    bracket (liftIO $ new start buffer tick recovery) (liftIO . close) m
 
 
 -------------------------------------------------------------------------------

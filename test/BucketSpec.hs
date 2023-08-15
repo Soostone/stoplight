@@ -21,23 +21,22 @@ spec_throttle = parallel $ describe "throttle" $ do
   where
     testThrottle tick regen =  do
         i <- newIORef (0 :: Integer)
-        t <- T.new 0 50 tick regen
+        T.withThrottle 0 50 tick regen $ \t -> do
+          replicateM_ 20 $ forkIO $ forever $ do
+            T.wait t 1
+            atomicModifyIORef' i $ \ i' -> (i'+1, ())
 
-        replicateM_ 20 $ forkIO $ forever $ do
-          T.wait t 1
-          atomicModifyIORef' i $ \ i' -> (i'+1, ())
+          -- wait a multiple of tick
+          let w = tick * 20
 
-        -- wait a multiple of tick
-        let w = tick * 20
+          threadDelay w
+          cnt <- readIORef i
 
-        threadDelay w
-        cnt <- readIORef i
+          let maxLim = (fromIntegral w / fromIntegral tick) * fromIntegral regen
+              (cnt' :: Double) = fromIntegral cnt
 
-        let maxLim = (fromIntegral w / fromIntegral tick) * fromIntegral regen
-            (cnt' :: Double) = fromIntegral cnt
-
-        assertBool ("meets upperbound: " ++ show cnt') $ cnt' <= maxLim
-        assertBool ("meets lowerbound: " ++ show cnt') $ cnt' >= maxLim * 0.8
+          assertBool ("meets upperbound: " ++ show cnt') $ cnt' <= maxLim
+          assertBool ("meets lowerbound: " ++ show cnt') $ cnt' >= maxLim * 0.8
 
 
 spec_overflow :: Spec
